@@ -1020,14 +1020,14 @@ namespace CefSharp
         /// <returns>
         /// <see cref="Task{JavascriptResponse}"/> that can be awaited to perform the script execution.
         /// </returns>
-        public static Task<JavascriptResponse> EvaluateScriptAsPromiseAsync(this IFrame frame, string script, TimeSpan? timeout = null)
+        public static Task<JavascriptResponse> EvaluateScriptAsPromiseAsync(this IFrame frame, string script, TimeSpan? timeout = null, bool useAsync = false)
         {
-            var promiseHandlerScript = GetPromiseHandlerScript(script, null);
+            var promiseHandlerScript = GetPromiseHandlerScript(script, null, useAsync);
 
             return frame.EvaluateScriptAsync(promiseHandlerScript, timeout: timeout, useImmediatelyInvokedFuncExpression: true);
         }
 
-        private static string GetPromiseHandlerScript(string script, string javascriptBindingApiGlobalObjectName)
+        private static string GetPromiseHandlerScript(string script, string javascriptBindingApiGlobalObjectName, bool useAsync)
         {
             var internalJsFunctionName = "cefSharp.sendEvalScriptResponse";
 
@@ -1046,7 +1046,7 @@ namespace CefSharp
                     internalJsFunctionName += ".SendEvalScriptResponse";
                 }
             }
-            var promiseHandlerScript = "let innerImmediatelyInvokedFuncExpression = (function() { " + script + " })(); Promise.resolve(innerImmediatelyInvokedFuncExpression).then((val) => " + internalJsFunctionName + "(cefSharpInternalCallbackId, true, val)).catch ((reason) => " + internalJsFunctionName + "(cefSharpInternalCallbackId, false, String(reason))); return 'CefSharpDefEvalScriptRes';";
+            var promiseHandlerScript = "let innerImmediatelyInvokedFuncExpression = (" + (useAsync ? "async " : "") + "function() { " + script + " })(); Promise.resolve(innerImmediatelyInvokedFuncExpression).then((val) => " + internalJsFunctionName + "(cefSharpInternalCallbackId, true, val)).catch ((reason) => " + internalJsFunctionName + "(cefSharpInternalCallbackId, false, String(reason))); return 'CefSharpDefEvalScriptRes';";
 
             return promiseHandlerScript;
         }
